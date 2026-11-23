@@ -1,0 +1,63 @@
+{
+  "name": "@local/intelligent-inspiration",
+  "version": "2.1.0",
+  "author": "intelligent-inspiration contributors",
+  "description": "Turns cards, actions, inspiration, quiz, sort, softmax, match, and chart fences in a chat answer into interactive blocks instead of code: a resource list with linked titles, a checkable list of next steps, full-width suggested next prompts that fill the composer, a graded quiz with explanations, an order-the-steps exercise, a temperature slider driving live probability bars, a pair-the-columns exercise, and a small bar or line chart. The host half teaches the Claim → Quiz → What to do → Recommendations format, with the quiz checking whether the reader understood the claim.",
+  "type": "module",
+  "license": "MIT",
+  "keywords": [
+    "dsh-plugin",
+    "deepseek-harness",
+    "markdown",
+    "fence",
+    "interactive",
+    "quiz",
+    "chart",
+    "cards",
+    "checklist",
+    "actions",
+    "inspiration",
+    "suggestions"
+  ],
+  "exports": {
+    ".": "./index.js",
+    "./client": "./client.js",
+    "./package.json": "./package.json",
+    "./locale/*.json": "./locale/*.json",
+    "./icon": "./icon.svg"
+  },
+  "files": [
+    "index.js",
+    "client.js",
+    "cordis.patch.yml",
+    "locale/*.json",
+    "docs",
+    "README.md",
+    "CHANGELOG.md",
+    "LICENSE",
+    "icon.svg"
+  ],
+  "engines": {
+    "node": ">=20.11"
+  },
+  "dsh": {
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    },
+    "client": {
+      "platform": "web",
+      "immediately": true,
+      "inject": [
+        "@deepseek-ai/dsh-client-ui-chat"
+      ]
+    }
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/MicroCapCap/intelligent-inspiration.git"
+  },
+  "homepage": "https://github.com/MicroCapCap/intelligent-inspiration",
+  "bugs": {
+    "url": "https://github.com/MicroCapCap/intelligent-inspiration/issues"
+  }
+}

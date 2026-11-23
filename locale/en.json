@@ -1,0 +1,7 @@
+{
+  "meta": {
+    "title": "Intelligent Inspiration",
+    "description": "Renders eight Markdown fence languages in a chat answer as interactive blocks instead of code: cards (thumbnail, linked title, description, source chips), actions (a checkable list of next steps with progress), inspiration (full-width suggested next prompts that fill the composer when clicked), quiz (multiple choice with instant grading, progress bar, score, and per-question explanation), sort (reorder with move buttons, then check the order), softmax (temperature slider driving live probability bars and entropy), match (pair the two columns, then check), and chart (bar or line chart from plain numbers). The host half also injects the Claim / Quiz / What to do / Recommendations answer format and the rules that make the quiz test understanding of the claim and the inspiration suggestions follow the conversation and the workspace. The body must be JSON whose kind matches the fence language. Any other fence still renders as a code block; a body that is still streaming, is not valid JSON, or has too few valid entries falls back to the plain code block. Rendering is local: no model request is added and no block state leaves the message. The only network read is a card thumbnail, which loads from the host that serves that image, without a referrer.",
+    "detail": "docs/DETAIL.md"
+  }
+}

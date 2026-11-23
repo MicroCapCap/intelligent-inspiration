@@ -1,0 +1,42 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="640" height="300" viewBox="0 0 640 300">
+  <!-- Text-free illustration: a resource card list beside a graded quiz. -->
+  <rect x="32" y="40" width="576" height="220" rx="18" fill="none" stroke="#8a8f98" stroke-opacity="0.3"/>
+  <line x1="340" y1="60" x2="340" y2="240" stroke="#8a8f98" stroke-opacity="0.2"/>
+
+  <!-- card row 1 -->
+  <rect x="56" y="68" width="52" height="52" rx="12" fill="#2f6fd0" fill-opacity="0.16" stroke="#2f6fd0" stroke-opacity="0.35"/>
+  <circle cx="82" cy="94" r="11" fill="#2f6fd0" fill-opacity="0.55"/>
+  <rect x="120" y="74" width="132" height="11" rx="5.5" fill="#8a8f98" fill-opacity="0.55"/>
+  <path d="M258 78 l6 -6 M258 72 h6 v6" fill="none" stroke="#2f6fd0" stroke-opacity="0.7" stroke-width="1.6" stroke-linecap="round"/>
+  <rect x="120" y="94" width="176" height="8" rx="4" fill="#8a8f98" fill-opacity="0.28"/>
+  <rect x="120" y="108" width="120" height="8" rx="4" fill="#8a8f98" fill-opacity="0.28"/>
+
+  <line x1="56" y1="134" x2="300" y2="134" stroke="#8a8f98" stroke-opacity="0.18"/>
+
+  <!-- card row 2 -->
+  <rect x="56" y="148" width="52" height="52" rx="12" fill="#8a8f98" fill-opacity="0.18" stroke="#8a8f98" stroke-opacity="0.3"/>
+  <circle cx="82" cy="174" r="11" fill="#8a8f98" fill-opacity="0.45"/>
+  <rect x="120" y="154" width="104" height="11" rx="5.5" fill="#8a8f98" fill-opacity="0.55"/>
+  <rect x="120" y="174" width="168" height="8" rx="4" fill="#8a8f98" fill-opacity="0.28"/>
+  <rect x="120" y="188" width="140" height="8" rx="4" fill="#8a8f98" fill-opacity="0.28"/>
+
+  <!-- quiz -->
+  <rect x="364" y="68" width="196" height="10" rx="5" fill="#8a8f98" fill-opacity="0.5"/>
+  <rect x="364" y="84" width="140" height="8" rx="4" fill="#8a8f98" fill-opacity="0.3"/>
+
+  <rect x="364" y="104" width="212" height="30" rx="9" fill="none" stroke="#8a8f98" stroke-opacity="0.35"/>
+  <circle cx="380" cy="119" r="6.5" fill="none" stroke="#8a8f98" stroke-opacity="0.5"/>
+  <rect x="398" y="115" width="110" height="7" rx="3.5" fill="#8a8f98" fill-opacity="0.35"/>
+
+  <rect x="364" y="140" width="212" height="30" rx="9" fill="#2f8f4e" fill-opacity="0.1" stroke="#2f8f4e" stroke-opacity="0.55"/>
+  <circle cx="380" cy="155" r="7" fill="#2f8f4e"/>
+  <path d="M376.6 155.2 l2.6 2.6 l4.6 -5.4" fill="none" stroke="#ffffff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+  <rect x="398" y="151" width="126" height="7" rx="3.5" fill="#8a8f98" fill-opacity="0.35"/>
+
+  <rect x="364" y="176" width="212" height="30" rx="9" fill="none" stroke="#8a8f98" stroke-opacity="0.35"/>
+  <circle cx="380" cy="191" r="6.5" fill="none" stroke="#8a8f98" stroke-opacity="0.5"/>
+  <rect x="398" y="187" width="90" height="7" rx="3.5" fill="#8a8f98" fill-opacity="0.35"/>
+
+  <rect x="364" y="220" width="212" height="6" rx="3" fill="#8a8f98" fill-opacity="0.22"/>
+  <rect x="364" y="220" width="126" height="6" rx="3" fill="#2f6fd0" fill-opacity="0.75"/>
+</svg>
