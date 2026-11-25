@@ -1,5 +1,11 @@
 # Changelog
 
+## 2.1.2
+
+- The monogram now fades out once the image paints. It stays visible while the
+  image is loading, but a transparent logo no longer shows the letter through
+  its empty pixels.
+
 ## 2.1.1
 
 - Card thumbnails now try the site's own icon before falling back to a monogram:

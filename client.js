@@ -436,6 +436,8 @@ window.__ModuleLoader__.load({
             color: T.dim,
             fontSize: 24,
             fontWeight: 600,
+            opacity: loaded ? 0 : 1,
+            transition: 'opacity 120ms ease',
           },
         }, props.initial),
         src ? h('img', {
