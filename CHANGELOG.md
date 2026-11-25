@@ -1,5 +1,17 @@
 # Changelog
 
+## 2.1.1
+
+- Card thumbnails now try the site's own icon before falling back to a monogram:
+  when `thumb` is missing, uses a placeholder host (`example.com`) or an elided
+  host (`https://...`), the row loads `origin/favicon.ico`, then
+  `icons.duckduckgo.com/ip3/<host>.ico`. This is what left rows without a
+  thumbnail sitting on a letter block even though the site had a real icon.
+- The monogram stays visible underneath the image while it loads, so a slow or
+  blocked host shows the letter instead of a blank square.
+- Placeholder and unresolvable thumbnail URLs are rejected before a request is
+  made, and a failed image advances to the next source instead of giving up.
+
 ## 2.1.0
 
 - Added a **Quiz** section between Claim and What to do. The host guidance now

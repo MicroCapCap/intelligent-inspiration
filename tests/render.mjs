@@ -176,6 +176,35 @@ for (const [lang, body] of [
   console.log(`ok   ${lang} renders no internal section heading`)
 }
 
+// Cards: a row without a usable thumbnail still gets a real image (the site's
+// own icon), a placeholder thumbnail never becomes a request, and a valid
+// thumbnail is used as given.
+const cardSources = collectElements(
+  registrations.get('cards')({
+    code: JSON.stringify({
+      cards: [
+        { title: 'No thumb', href: 'https://ocw.mit.edu/courses/18-06-linear-algebra-spring-2010/' },
+        { title: 'Placeholder thumb', href: 'https://github.com/karpathy/nanoGPT', thumb: 'https://example.com/logo.png' },
+        { title: 'Elided thumb', href: 'https://pytorch.org/', thumb: 'https://…' },
+        { title: 'Real thumb', href: 'https://cs336.stanford.edu/', thumb: 'https://avatars.githubusercontent.com/u/1?v=4' },
+      ],
+    }),
+    streaming: false,
+    children: null,
+  }),
+  (node) => node.type === 'img',
+).map((node) => node.props.src)
+const expectedSources = [
+  'https://ocw.mit.edu/favicon.ico',
+  'https://github.com/favicon.ico',
+  'https://pytorch.org/favicon.ico',
+  'https://avatars.githubusercontent.com/u/1?v=4',
+]
+if (cardSources.join('\n') !== expectedSources.join('\n')) {
+  throw new Error(`cards: unexpected image sources ${JSON.stringify(cardSources)}`)
+}
+console.log('ok   cards fall back to the site icon and skip placeholder thumbnails')
+
 // Inspiration: one full-width row per suggestion, and a click fills the draft
 // through inputActions instead of sending.
 const inspirationPayload = {

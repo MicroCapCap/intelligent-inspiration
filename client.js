@@ -64,6 +64,50 @@ window.__ModuleLoader__.load({
 
     const HTTP = /^https?:\/\//i;
     const SEPARATOR = '  \u00b7  ';
+    // Hosts a model writes when it is filling in a shape rather than naming a
+    // real resource. A thumbnail on one of these never resolves.
+    const PLACEHOLDER_HOST = /^(www\.)?example\.(com|org|net)$|^(localhost|127\.0\.0\.1)$/i;
+
+    /**
+     * A thumbnail is only worth a request when it is an absolute http(s) URL
+     * with a host that can resolve. Placeholder hosts and elided hosts
+     * (`https://...`, `https://\u2026`) are what made some cards sit on a blank
+     * square: the browser was asked to fetch a host that does not exist.
+     */
+    function imageUrl(value) {
+      if (typeof value !== 'string') return '';
+      const raw = value.trim();
+      if (!HTTP.test(raw)) return '';
+      try {
+        const url = new URL(raw);
+        const host = url.hostname;
+        if (host === '' || host === '...' || host.indexOf('\u2026') >= 0) return '';
+        if (!host.includes('.') || host.startsWith('.') || PLACEHOLDER_HOST.test(host)) return '';
+        return raw;
+      } catch (error) {
+        return '';
+      }
+    }
+
+    /** The site's own icon, used when the card has no usable thumbnail. */
+    function siteIcon(href) {
+      if (typeof href !== 'string' || !HTTP.test(href)) return '';
+      try {
+        return new URL(href).origin + '/favicon.ico';
+      } catch (error) {
+        return '';
+      }
+    }
+
+    /** Last-resort icon lookup for sites that do not serve /favicon.ico. */
+    function serviceIcon(href) {
+      if (typeof href !== 'string' || !HTTP.test(href)) return '';
+      try {
+        return 'https://icons.duckduckgo.com/ip3/' + new URL(href).hostname + '.ico';
+      } catch (error) {
+        return '';
+      }
+    }
 
     // Text for assistive technology only.
     const srOnly = {
@@ -302,11 +346,20 @@ window.__ModuleLoader__.load({
       const title = line(entry.title, 200);
       if (!title) return null;
       const href = typeof entry.href === 'string' && HTTP.test(entry.href.trim()) ? entry.href.trim() : '';
-      const thumb = typeof entry.thumb === 'string' && HTTP.test(entry.thumb.trim()) ? entry.thumb.trim() : '';
+      const thumb = imageUrl(entry.thumb);
       const tags = Array.isArray(entry.tags)
         ? entry.tags.filter((tag) => typeof tag === 'string' && tag.trim()).slice(0, 4).map((tag) => line(tag, 24))
         : [];
-      return { title, href, thumb, tags, desc: text(entry.desc, 600), source: line(entry.source, 24) };
+      return {
+        title,
+        href,
+        thumb,
+        fallback: siteIcon(href),
+        service: serviceIcon(href),
+        tags,
+        desc: text(entry.desc, 600),
+        source: line(entry.source, 24),
+      };
     }
 
     /**
@@ -341,8 +394,23 @@ window.__ModuleLoader__.load({
     }
 
     function Thumb(props) {
-      const [broken, setBroken] = useState(false);
+      // A thumbnail can fail for reasons the answer cannot see: a hotlink
+      // guard, a host this network cannot reach, or a URL the model filled in
+      // from the shape of an example. Try the supplied image, then the site's
+      // own /favicon.ico, then a public icon lookup. The monogram sits
+      // underneath the whole time, so a slow request never leaves a hole.
+      const sources = useMemo(() => {
+        const list = [props.src, props.fallback, props.service].filter(Boolean);
+        return list.filter((url, index) => list.indexOf(url) === index);
+      }, [props.src, props.fallback, props.service]);
+      const [index, setIndex] = useState(0);
+      const [loaded, setLoaded] = useState(false);
+      useResetOnChange(sources.join('|'), () => {
+        setIndex(0);
+        setLoaded(false);
+      });
       const box = {
+        position: 'relative',
         flex: '0 0 72px',
         width: 72,
         height: 72,
@@ -350,36 +418,53 @@ window.__ModuleLoader__.load({
         overflow: 'hidden',
         background: T.chip,
         border: '1px solid ' + T.border,
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
       };
-      if (props.src && !broken) {
-        return h('span', { style: box },
-          h('img', {
-            src: props.src,
-            alt: '',
-            loading: 'lazy',
-            decoding: 'async',
-            referrerPolicy: 'no-referrer',
-            onError: () => setBroken(true),
-            style: {
-              width: '100%',
-              height: '100%',
-              // contain, not cover: course and repository logos are usually not
-              // photographs, and cover crops the mark out of them.
-              objectFit: 'contain',
-              padding: 6,
-              boxSizing: 'border-box',
-              display: 'block',
-            },
-          }));
-      }
-      // Monogram fallback: a missing or dead image must not leave a hole.
-      return h('span', {
-        'aria-hidden': true,
-        style: Object.assign({}, box, {
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-          color: T.dim, fontSize: 24, fontWeight: 600,
-        }),
-      }, props.initial);
+      const src = sources[index];
+      return h('span', { style: box },
+        // Monogram fallback: a missing or dead image must not leave a hole.
+        h('span', {
+          'aria-hidden': true,
+          style: {
+            position: 'absolute',
+            inset: 0,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            color: T.dim,
+            fontSize: 24,
+            fontWeight: 600,
+          },
+        }, props.initial),
+        src ? h('img', {
+          key: src,
+          src,
+          alt: '',
+          loading: 'lazy',
+          decoding: 'async',
+          referrerPolicy: 'no-referrer',
+          onLoad: () => setLoaded(true),
+          onError: () => {
+            setLoaded(false);
+            setIndex((value) => value + 1);
+          },
+          style: {
+            position: 'absolute',
+            inset: 0,
+            width: '100%',
+            height: '100%',
+            // contain, not cover: course and repository logos are usually not
+            // photographs, and cover crops the mark out of them.
+            objectFit: 'contain',
+            padding: 6,
+            boxSizing: 'border-box',
+            display: 'block',
+            opacity: loaded ? 1 : 0,
+            transition: 'opacity 120ms ease',
+          },
+        }) : null);
     }
 
     function CardRow(props) {
@@ -448,7 +533,12 @@ window.__ModuleLoader__.load({
           borderTop: props.first ? 'none' : '1px solid ' + T.border,
         },
       },
-        h(Thumb, { key: card.thumb || 'monogram', src: card.thumb, initial: card.title.slice(0, 1).toUpperCase() }),
+        h(Thumb, {
+          src: card.thumb,
+          fallback: card.fallback,
+          service: card.service,
+          initial: card.title.slice(0, 1).toUpperCase(),
+        }),
         h('div', { style: { minWidth: 0, flex: 1 } }, heading, meta));
     }
 

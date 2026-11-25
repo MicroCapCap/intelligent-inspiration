@@ -78,7 +78,7 @@ text is untouched either way.
 | --- | --- | --- |
 | `title` | yes | The click target. Long titles wrap; the row links to `href`. |
 | `href` | no | `http(s)` only. Without it the title is plain text. |
-| `thumb` | no | `http(s)` only. A failed or missing image falls back to a monogram. |
+| `thumb` | no | `http(s)` only. A missing, placeholder or failed image falls back to the site's own icon, then a public icon lookup, then a monogram. |
 | `desc` | no | One sentence of value. It wraps freely and is never truncated, so keep it short. |
 | `source` | no | Outlined chip, usually the organisation. |
 | `tags` | no | Up to 4 filled chips, each 24 characters. |
@@ -88,9 +88,14 @@ group level, `title` is optional: omit it in the three-part answer because the
 heading is the Markdown heading above the block; `note` is one line under it.
 
 Thumbnails are decorative: they are announced as an empty `alt`, so a row stays
-meaningful to a screen reader with or without an image. A thumbnail is fetched
-from its own host when the block renders, so a card with a `thumb` does contact
-that host (with no referrer); a card without one contacts nothing.
+meaningful to a screen reader with or without an image. The image chain is the
+`thumb` when it is a real absolute URL (placeholder hosts such as `example.com`
+and elided hosts such as `https://...` are ignored), then the card's own site at
+`origin/favicon.ico`, then `icons.duckduckgo.com`, then a monogram. The monogram
+stays visible underneath while a request is in flight, so a slow or blocked host
+never leaves a blank square. Requests carry no referrer. A card with a `thumb`
+first contacts that host; a card without one contacts its own site, and
+DuckDuckGo only if that favicon is missing.
 
 ### `actions` — a checklist of next steps
 
@@ -263,10 +268,11 @@ width chat column instead of shrinking its type to nothing.
   other syntax errors fall back.
 - **Local only.** No model request is added, no block state leaves the message,
   and each block owns its own component state, reset when the body changes. The
-  one network read is a card `thumb`: it loads from the host that serves the
-  image, with no referrer. A card without a `thumb` fetches nothing.
-- **Selection.** Only the seven fence languages above are claimed. Adding an
-  eighth would shadow a code block someone else may want.
+  only network reads are card thumbnails: the `thumb` host, then the card's own
+  site for `/favicon.ico`, then `icons.duckduckgo.com` only if that fails — all
+  with no referrer. A card without a `thumb` fetches only its own site's icon.
+- **Selection.** Only the eight fence languages above are claimed. Adding a
+  ninth would shadow a code block someone else may want.
 
 ## Theming and accessibility
 
