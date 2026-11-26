@@ -3,4 +3,4 @@ name: MicroCapCap/intelligent-inspiration
 category: ui
 description:
   en: Renders eight Markdown fence languages — cards, actions, inspiration, quiz, sort, softmax, match, and chart — as interactive blocks in DeepSeek Harness chat answers.
-tarball: https://github.com/MicroCapCap/intelligent-inspiration/releases/download/v2.1.3/intelligent-inspiration-2.1.3.tgz
+tarball: https://github.com/MicroCapCap/intelligent-inspiration/releases/download/v2.2.0/intelligent-inspiration-2.2.0.tgz

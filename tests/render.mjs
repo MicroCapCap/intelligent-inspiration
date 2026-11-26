@@ -47,6 +47,7 @@ const fakeReact = {
   useMemo(factory) {
     return factory()
   },
+  useEffect() {},
   useSyncExternalStore(_subscribe, getSnapshot) {
     return getSnapshot()
   },
@@ -54,6 +55,7 @@ const fakeReact = {
 
 const registrations = new Map()
 const sections = []
+const composer = []
 const fakeCtx = {
   slots: {
     inject(_name, callback) {
@@ -62,6 +64,10 @@ const fakeCtx = {
     register(options, component) {
       if (options.name === 'settings.section') {
         sections.push({ options, component })
+        return {}
+      }
+      if (options.name === 'conversation.composer.dock') {
+        composer.push({ options, component })
         return {}
       }
       registrations.set(options.key, component)
@@ -92,6 +98,16 @@ if (sections[0].options.id !== '@local/intelligent-inspiration/settings') {
   throw new Error('settings section id is ' + sections[0].options.id)
 }
 console.log('ok   settings section registered')
+
+if (composer.length !== 1) throw new Error(`expected one composer contribution, got ${composer.length}`)
+if (composer[0].options.id !== '@local/intelligent-inspiration/session-toggle') {
+  throw new Error('composer contribution id is ' + composer[0].options.id)
+}
+const toggleText = collectText(composer[0].component({ sessionId: 'session-1' })).join(' ')
+if (!toggleText.includes('Inspiration on')) {
+  throw new Error('composer toggle text: ' + toggleText)
+}
+console.log('ok   composer Inspiration toggle registered')
 
 const LANGS = ['cards', 'actions', 'inspiration', 'quiz', 'sort', 'softmax', 'match', 'chart']
 
