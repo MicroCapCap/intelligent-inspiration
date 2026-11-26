@@ -40,22 +40,27 @@ const mod = entry && entry.factory(() => ({
   createElement() {},
   useState() {},
   useMemo() {},
+  useSyncExternalStore() {},
   Component: class Component {},
 }));
 if (!mod || typeof mod.apply !== 'function') fail.push('factory did not return an apply()');
 else ok.push('factory returned apply()');
 
 const registered = [];
+const sections = [];
 if (mod && typeof mod.apply === 'function') {
   const ctx = {
     slots: {
       inject(name, install) {
-        if (name !== 'conversation.chat.markdown.fence') fail.push('wrong slot: ' + name);
+        if (name !== 'conversation.chat.markdown.fence' && name !== 'settings.section') {
+          fail.push('wrong slot: ' + name);
+        }
         const dispose = install();
         if (typeof dispose !== 'function') fail.push('register() must return a disposer');
       },
       register(options, component) {
-        registered.push({ options, component });
+        if (options.name === 'settings.section') sections.push({ options, component });
+        else registered.push({ options, component });
         return () => {};
       },
     },
@@ -80,6 +85,20 @@ for (const row of registered) {
     fail.push('row id malformed for ' + options.key + ': ' + options.id);
   }
   if (typeof component !== 'function') fail.push('row ' + options.key + ' has a non-component');
+}
+
+if (sections.length !== 1) {
+  fail.push('settings sections: expected 1 got ' + sections.length);
+} else {
+  const { options, component } = sections[0];
+  if (options.id !== '@local/intelligent-inspiration/settings') {
+    fail.push('settings id malformed: ' + options.id);
+  }
+  if (typeof options.label !== 'function' || options.label() !== 'Intelligent Inspiration') {
+    fail.push('settings label malformed');
+  }
+  if (typeof component !== 'function') fail.push('settings section has a non-component');
+  else ok.push('settings section registered');
 }
 if (!fail.length) ok.push('every registration well formed');
 

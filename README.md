@@ -97,6 +97,10 @@ never leaves a blank square. Requests carry no referrer. A card with a `thumb`
 first contacts that host; a card without one contacts its own site, and
 DuckDuckGo only if that favicon is missing.
 
+**Settings → Intelligent Inspiration → Load external card icons** turns the
+whole chain off. Every card then renders its monogram tile and no image request
+is made; the choice is stored in the renderer and survives a restart.
+
 ### `actions` — a checklist of next steps
 
 ```actions
@@ -271,6 +275,8 @@ width chat column instead of shrinking its type to nothing.
   only network reads are card thumbnails: the `thumb` host, then the card's own
   site for `/favicon.ico`, then `icons.duckduckgo.com` only if that fails — all
   with no referrer. A card without a `thumb` fetches only its own site's icon.
+  Settings → Intelligent Inspiration can turn all of these off.
+  Settings → Intelligent Inspiration can turn all of these off.
 - **Selection.** Only the eight fence languages above are claimed. Adding a
   ninth would shadow a code block someone else may want.
 

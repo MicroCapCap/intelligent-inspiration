@@ -1,5 +1,14 @@
 # Changelog
 
+## 2.1.3
+
+- Added a **Settings → Intelligent Inspiration** switch, *Load external card
+  icons*. Turned off, cards render only the monogram tile and make no image
+  request at all. It is stored in the renderer and survives a restart.
+- This is the switch the listing review asked for: it makes the card icon
+  chain (thumb → site favicon → DuckDuckGo) something the reader can opt out of
+  without disabling the plugin.
+
 ## 2.1.2
 
 - The monogram now fades out once the image paints. It stays visible while the

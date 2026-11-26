@@ -25,6 +25,11 @@ window.__ModuleLoader__.load({
     const h = React.createElement;
     const useState = React.useState;
     const useMemo = React.useMemo;
+    // React 18 has this; a host on an older renderer still gets the initial
+    // value rather than a crash (the setting then applies on the next mount).
+    const useSyncExternalStore = typeof React.useSyncExternalStore === 'function'
+      ? React.useSyncExternalStore
+      : (subscribe, getSnapshot) => getSnapshot();
 
     // Host theme tokens with literals as the fallback, so a renamed token
     // degrades the colors instead of breaking the widget. The two literals that
@@ -106,6 +111,50 @@ window.__ModuleLoader__.load({
         return 'https://icons.duckduckgo.com/ip3/' + new URL(href).hostname + '.ico';
       } catch (error) {
         return '';
+      }
+    }
+
+    /**
+     * Whether cards may contact external hosts for thumbnails. The switch lives
+     * in Settings → Intelligent Inspiration; localStorage keeps it across
+     * restarts, and the module-level listeners re-render every mounted card
+     * when it changes. Off means a monogram tile and no image request at all.
+     */
+    const ICONS_SETTING = 'intelligent-inspiration.external-icons';
+    const iconListeners = new Set();
+    let iconsInMemory = true;
+
+    function iconsEnabled() {
+      try {
+        const stored = window.localStorage.getItem(ICONS_SETTING);
+        if (stored === 'off') return false;
+        if (stored === 'on') return true;
+      } catch (error) {
+        // A renderer without storage falls back to the in-memory value.
+      }
+      return iconsInMemory;
+    }
+
+    function subscribeIcons(listener) {
+      iconListeners.add(listener);
+      return () => {
+        iconListeners.delete(listener);
+      };
+    }
+
+    function setIconsEnabled(enabled) {
+      iconsInMemory = Boolean(enabled);
+      try {
+        window.localStorage.setItem(ICONS_SETTING, iconsInMemory ? 'on' : 'off');
+      } catch (error) {
+        // In-memory is still correct for this run.
+      }
+      for (const listener of Array.from(iconListeners)) {
+        try {
+          listener();
+        } catch (error) {
+          // One bad subscriber must not stop the others.
+        }
       }
     }
 
@@ -399,10 +448,12 @@ window.__ModuleLoader__.load({
       // from the shape of an example. Try the supplied image, then the site's
       // own /favicon.ico, then a public icon lookup. The monogram sits
       // underneath the whole time, so a slow request never leaves a hole.
+      const allowExternal = useSyncExternalStore(subscribeIcons, iconsEnabled);
       const sources = useMemo(() => {
+        if (!allowExternal) return [];
         const list = [props.src, props.fallback, props.service].filter(Boolean);
         return list.filter((url, index) => list.indexOf(url) === index);
-      }, [props.src, props.fallback, props.service]);
+      }, [allowExternal, props.src, props.fallback, props.service]);
       const [index, setIndex] = useState(0);
       const [loaded, setLoaded] = useState(false);
       useResetOnChange(sources.join('|'), () => {
@@ -1351,6 +1402,33 @@ window.__ModuleLoader__.load({
             }, '↗')))));
     }
 
+    // ------------------------------------------------------------- settings --
+
+    function SettingsPanel() {
+      const enabled = useSyncExternalStore(subscribeIcons, iconsEnabled);
+      return h('div', { style: { display: 'flex', flexDirection: 'column', gap: 6 } },
+        h('label', {
+          style: {
+            display: 'flex',
+            alignItems: 'center',
+            gap: 8,
+            cursor: 'pointer',
+            color: T.text,
+            fontSize: 14,
+          },
+        },
+          h('input', {
+            type: 'checkbox',
+            checked: enabled,
+            onChange: (event) => setIconsEnabled(event.target.checked),
+          }),
+          h('span', null, 'Load external card icons'),
+        ),
+        h('p', {
+          style: { margin: 0, color: T.dim, fontSize: 12.5, lineHeight: '18px' },
+        }, 'Recommendation cards fetch the thumbnail, then the site favicon. Turn this off to show the monogram tile only — no image request leaves Harness.'));
+    }
+
     // ---------------------------------------------------------------- guard --
 
     class Guard extends React.Component {
@@ -1399,6 +1477,12 @@ window.__ModuleLoader__.load({
             id: '@local/intelligent-inspiration/fence/' + key,
           }, component));
         }
+        ctx.slots.inject('settings.section', () => ctx.slots.register({
+          name: 'settings.section',
+          id: '@local/intelligent-inspiration/settings',
+          order: 332,
+          label: () => 'Intelligent Inspiration',
+        }, SettingsPanel));
       },
     };
   },

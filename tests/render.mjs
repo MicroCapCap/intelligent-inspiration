@@ -47,15 +47,23 @@ const fakeReact = {
   useMemo(factory) {
     return factory()
   },
+  useSyncExternalStore(_subscribe, getSnapshot) {
+    return getSnapshot()
+  },
 }
 
 const registrations = new Map()
+const sections = []
 const fakeCtx = {
   slots: {
     inject(_name, callback) {
       return callback()
     },
     register(options, component) {
+      if (options.name === 'settings.section') {
+        sections.push({ options, component })
+        return {}
+      }
       registrations.set(options.key, component)
       return {}
     },
@@ -78,6 +86,12 @@ pluginExports.apply(fakeCtx)
 
 if (registrations.size !== 8) throw new Error(`expected 8 fence registrations, got ${registrations.size}`)
 console.log('ok   eight fence registrations captured')
+
+if (sections.length !== 1) throw new Error(`expected one settings section, got ${sections.length}`)
+if (sections[0].options.id !== '@local/intelligent-inspiration/settings') {
+  throw new Error('settings section id is ' + sections[0].options.id)
+}
+console.log('ok   settings section registered')
 
 const LANGS = ['cards', 'actions', 'inspiration', 'quiz', 'sort', 'softmax', 'match', 'chart']
 
@@ -204,6 +218,24 @@ if (cardSources.join('\n') !== expectedSources.join('\n')) {
   throw new Error(`cards: unexpected image sources ${JSON.stringify(cardSources)}`)
 }
 console.log('ok   cards fall back to the site icon and skip placeholder thumbnails')
+
+// Settings: turning external icons off removes every image request from the
+// cards without changing the rest of the block.
+const settingsTree = sections[0].component({})
+const checkbox = collectElements(settingsTree, (node) => node.type === 'input')[0]
+if (!checkbox) throw new Error('settings: no checkbox')
+if (checkbox.props.checked !== true) throw new Error('settings: external icons should default on')
+const cardPayload = JSON.stringify({ cards: [{ title: 'One', href: 'https://ocw.mit.edu/courses/18-06/' }] })
+const renderCards = () => registrations.get('cards')({ code: cardPayload, streaming: false, children: null })
+checkbox.props.onChange({ target: { checked: false } })
+if (collectElements(renderCards(), (node) => node.type === 'img').length !== 0) {
+  throw new Error('settings: off still requests images')
+}
+checkbox.props.onChange({ target: { checked: true } })
+if (collectElements(renderCards(), (node) => node.type === 'img').length !== 1) {
+  throw new Error('settings: on lost the image')
+}
+console.log('ok   external icon setting gates card image requests')
 
 // Inspiration: one full-width row per suggestion, and a click fills the draft
 // through inputActions instead of sending.
