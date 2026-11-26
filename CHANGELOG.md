@@ -1,18 +1,5 @@
 # Changelog
 
-## 2.2.0
-
-- Added a **per-conversation Inspiration switch** in the composer dock. Off
-  means the host does not attach the answer-format guidance to that session's
-  agent, so subsequent answers are plain and carry no Claim / Quiz /
-  Recommendations structure or inspiration chips. The state is remembered per
-  session under `$DSH_HOME/intelligent-inspiration/sessions.json`; existing
-  messages are unchanged and the default is on.
-- The host now attaches the guidance per agent (on `agent/created` and for
-  already-live agents) instead of registering one global section, which is what
-  makes the per-session switch possible. The switch route goes through the
-  host's route authentication and a loopback/same-origin check.
-
 ## 2.1.3
 
 - Added a **Settings → Intelligent Inspiration** switch, *Load external card

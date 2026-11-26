@@ -14,23 +14,9 @@ probability bars, a pairing exercise, or a small chart.
 Every other fence, and every malformed body, still renders exactly as it did
 before the plugin was installed.
 
-## The per-conversation switch
-
-The composer dock carries an **Inspiration on / off** chip. It is per session:
-off means the host does not attach the answer-format guidance to that session's
-agent, so the next answers are plain — no Claim / Quiz / Recommendations
-structure and no inspiration chips. Existing messages are unchanged, the choice
-is remembered for that session, and the default is on. The state lives in
-`$DSH_HOME/intelligent-inspiration/sessions.json`.
-
-This is separate from **Settings → Intelligent Inspiration → Load external card
-icons**, which controls whether already-rendered cards may fetch remote
-thumbnails.
-
 ## The four-part answer, plus inspiration
 
-The host half attaches the guidance to each agent (unless the per-conversation
-switch is off). The four titles are ordinary
+The host half injects the guidance for this format. The four titles are ordinary
 Markdown H2 headings at the same level, written in the answer itself:
 
 - `## Claim` — the normal answer, written normally.

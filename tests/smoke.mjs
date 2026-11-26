@@ -48,12 +48,11 @@ else ok.push('factory returned apply()');
 
 const registered = [];
 const sections = [];
-const composer = [];
 if (mod && typeof mod.apply === 'function') {
   const ctx = {
     slots: {
       inject(name, install) {
-        if (name !== 'conversation.chat.markdown.fence' && name !== 'settings.section' && name !== 'conversation.composer.dock') {
+        if (name !== 'conversation.chat.markdown.fence' && name !== 'settings.section') {
           fail.push('wrong slot: ' + name);
         }
         const dispose = install();
@@ -61,7 +60,6 @@ if (mod && typeof mod.apply === 'function') {
       },
       register(options, component) {
         if (options.name === 'settings.section') sections.push({ options, component });
-        else if (options.name === 'conversation.composer.dock') composer.push({ options, component });
         else registered.push({ options, component });
         return () => {};
       },
@@ -101,17 +99,6 @@ if (sections.length !== 1) {
   }
   if (typeof component !== 'function') fail.push('settings section has a non-component');
   else ok.push('settings section registered');
-}
-
-if (composer.length !== 1) {
-  fail.push('composer contributions: expected 1 got ' + composer.length);
-} else {
-  const { options, component } = composer[0];
-  if (options.id !== '@local/intelligent-inspiration/session-toggle') {
-    fail.push('composer id malformed: ' + options.id);
-  }
-  if (typeof component !== 'function') fail.push('composer contribution has a non-component');
-  else ok.push('composer Inspiration toggle registered');
 }
 if (!fail.length) ok.push('every registration well formed');
 

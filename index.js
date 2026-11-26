@@ -1,24 +1,14 @@
 /**
  * Host half of the Intelligent Inspiration bundle.
  *
- * Registers the answer-format guidance on each agent — not globally — so a
- * per-conversation switch can leave it out. It teaches the model to structure a
+ * Registers one system-prompt section. It teaches the model to structure a
  * substantive answer as Claim → Quiz → What to do → Recommendations, and to
  * close with an `inspiration` fence: three concrete prompts the user could
- * send next. The client half renders those fences and owns the switch in the
- * composer.
+ * send next. The client half renders those fences.
  */
 
-import { mkdirSync, readFileSync, writeFileSync } from 'node:fs'
-import { homedir } from 'node:os'
-import { dirname, join } from 'node:path'
-
 export const name = 'intelligent-inspiration'
-export const inject = ['systemPrompt', 'webServer']
-
-const API = '/intelligent-inspiration'
-const SECTION_ORDER = 3300
-const SECTION_NAME = 'intelligent-inspiration:guidance'
+export const inject = ['systemPrompt']
 
 const GUIDANCE = [
   '# Intelligent inspiration',
@@ -94,227 +84,11 @@ const GUIDANCE = [
   '```',
 ].join('\n')
 
-function stateFile() {
-  const home = process.env.DSH_HOME || join(homedir(), '.dsh')
-  return join(home, 'intelligent-inspiration', 'sessions.json')
-}
-
-function loadState() {
-  try {
-    const parsed = JSON.parse(readFileSync(stateFile(), 'utf8'))
-    return parsed && typeof parsed === 'object' && !Array.isArray(parsed) ? parsed : {}
-  } catch (error) {
-    return {}
-  }
-}
-
-function saveState(state) {
-  try {
-    const file = stateFile()
-    mkdirSync(dirname(file), { recursive: true })
-    writeFileSync(file, JSON.stringify(state))
-  } catch (error) {
-    // A read-only home still works for this run; the switch is best-effort.
-  }
-}
-
-/**
- * Older DSH releases expose `connection.requestRejection`; newer ones gate the
- * route through `auth: 'required'` before the handler runs. Use the old fence
- * when it exists and fall back to the loopback check otherwise.
- */
-function trustRefusal(ctx, request) {
-  let connection
-  try {
-    connection = typeof ctx.get === 'function' ? ctx.get('connection') : undefined
-  } catch {
-    connection = undefined
-  }
-  if (typeof connection?.requestRejection !== 'function') return undefined
-  try {
-    const rejection = connection.requestRejection(request)
-    return rejection === undefined ? undefined : rejection
-  } catch {
-    return undefined
-  }
-}
-
-function isLoopbackRequest(request) {
-  const address = request.socket?.remoteAddress
-  if (address !== '127.0.0.1' && address !== '::1' && address !== '::ffff:127.0.0.1') return false
-  const host = request.headers.host
-  if (typeof host !== 'string') return false
-  let hostUrl
-  try {
-    hostUrl = new URL(`http://${host}`)
-  } catch {
-    return false
-  }
-  if (hostUrl.hostname !== '127.0.0.1' && hostUrl.hostname !== 'localhost' && hostUrl.hostname !== '[::1]') return false
-  if (request.headers['sec-fetch-site'] === 'cross-site') return false
-  const origin = request.headers.origin
-  if (origin === undefined) return true
-  try {
-    return new URL(origin).host === hostUrl.host
-  } catch {
-    return false
-  }
-}
-
-function writeJson(res, status, body) {
-  res.writeHead(status, {
-    'content-type': 'application/json; charset=utf-8',
-    'referrer-policy': 'no-referrer',
-    'cache-control': 'no-store',
-  })
-  res.end(JSON.stringify(body))
-}
-
-async function readJsonBody(req) {
-  const chunks = []
-  let size = 0
-  for await (const chunk of req) {
-    size += chunk.length
-    if (size > 64 * 1024) return undefined
-    chunks.push(chunk)
-  }
-  if (size === 0) return {}
-  try {
-    const parsed = JSON.parse(Buffer.concat(chunks).toString('utf8'))
-    return parsed && typeof parsed === 'object' ? parsed : undefined
-  } catch (error) {
-    return undefined
-  }
-}
-
 export function apply(ctx) {
-  const state = loadState()
-  /** sessionId -> { agentCtx, dispose } for every live agent. */
-  const live = new Map()
-  const enabledFor = (sessionId) => state[sessionId] !== false
-
-  const promptService = (agentCtx) => {
-    if (!agentCtx) return undefined
-    try {
-      if (typeof agentCtx.get === 'function') {
-        const found = agentCtx.get('systemPrompt')
-        if (found !== undefined) return found
-      }
-    } catch (error) {
-      // Fall through to the property face.
-    }
-    try {
-      return agentCtx.systemPrompt
-    } catch (error) {
-      return undefined
-    }
-  }
-
-  const attach = (entry) => {
-    if (entry.dispose) return
-    const prompt = promptService(entry.agentCtx)
-    if (!prompt || typeof prompt.section !== 'function') return
-    entry.dispose = prompt.section({
-      name: SECTION_NAME,
-      order: SECTION_ORDER,
-      text: GUIDANCE,
-    })
-  }
-  const detach = (entry) => {
-    if (!entry.dispose) return
-    try {
-      entry.dispose()
-    } catch (error) {
-      // The agent may already be gone; dropping the handle is enough.
-    }
-    entry.dispose = null
-  }
-  const install = (agent) => {
-    if (!agent || typeof agent.id !== 'string' || live.has(agent.id)) return
-    const entry = { agentCtx: agent.ctx, dispose: null }
-    live.set(agent.id, entry)
-    if (enabledFor(agent.id)) attach(entry)
-  }
-  const uninstall = (agent) => {
-    if (!agent || typeof agent.id !== 'string') return
-    const entry = live.get(agent.id)
-    if (!entry) return
-    detach(entry)
-    live.delete(agent.id)
-  }
-
-  const stops = []
-  if (typeof ctx.on === 'function') {
-    const stopCreated = ctx.on('agent/created', ({ agent } = {}) => install(agent))
-    const stopDisposed = ctx.on('agent/disposed', ({ agent } = {}) => uninstall(agent))
-    if (typeof stopCreated === 'function') stops.push(stopCreated)
-    if (typeof stopDisposed === 'function') stops.push(stopDisposed)
-  }
-  const agents = typeof ctx.get === 'function' ? ctx.get('agents') : undefined
-  if (agents && typeof agents.list === 'function') {
-    for (const agent of agents.list()) install(agent)
-  }
-
-  if (ctx.webServer !== undefined && typeof ctx.webServer.register === 'function') {
-    const guard = (req, res, methods) => {
-      const refusal = trustRefusal(ctx, req)
-      if (refusal !== undefined) {
-        writeJson(res, refusal, { error: refusal === 401 ? 'unauthorized' : 'forbidden' })
-        return false
-      }
-      if (!isLoopbackRequest(req)) {
-        writeJson(res, 403, { error: 'forbidden: loopback-only' })
-        return false
-      }
-      if (!methods.includes(req.method)) {
-        writeJson(res, 405, { error: `method not allowed: ${req.method}` })
-        return false
-      }
-      return true
-    }
-    ctx.effect(() => ctx.webServer.register({
-      kind: 'exact',
-      path: `${API}/session`,
-      auth: 'required',
-      handler: async (req, res) => {
-        if (!guard(req, res, ['GET', 'POST'])) return
-        if (req.method === 'GET') {
-          const sessionId = new URL(req.url ?? '/', 'http://127.0.0.1').searchParams.get('sessionId') ?? ''
-          writeJson(res, 200, { enabled: sessionId === '' ? true : enabledFor(sessionId) })
-          return
-        }
-        const body = await readJsonBody(req)
-        if (body === undefined) {
-          writeJson(res, 400, { error: 'invalid JSON body' })
-          return
-        }
-        const sessionId = typeof body.sessionId === 'string' ? body.sessionId.trim() : ''
-        if (sessionId === '') {
-          writeJson(res, 400, { error: 'sessionId is required' })
-          return
-        }
-        const enabled = body.enabled !== false
-        state[sessionId] = enabled
-        saveState(state)
-        const entry = live.get(sessionId)
-        if (entry) {
-          if (enabled) attach(entry)
-          else detach(entry)
-        }
-        writeJson(res, 200, { enabled })
-      },
-    }), 'intelligent-inspiration: session switch route')
-  }
-
-  ctx.effect(() => () => {
-    for (const stop of stops) {
-      try {
-        stop()
-      } catch (error) {
-        // Already released.
-      }
-    }
-    for (const entry of live.values()) detach(entry)
-    live.clear()
-  }, 'intelligent-inspiration: per-agent guidance')
+  const dispose = ctx.systemPrompt.section({
+    name: 'intelligent-inspiration:guidance',
+    order: 3300,
+    text: GUIDANCE,
+  })
+  ctx.effect(() => dispose, 'intelligent-inspiration: guidance')
 }

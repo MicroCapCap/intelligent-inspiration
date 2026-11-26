@@ -25,7 +25,6 @@ window.__ModuleLoader__.load({
     const h = React.createElement;
     const useState = React.useState;
     const useMemo = React.useMemo;
-    const useEffect = React.useEffect;
     // React 18 has this; a host on an older renderer still gets the initial
     // value rather than a crash (the setting then applies on the next mount).
     const useSyncExternalStore = typeof React.useSyncExternalStore === 'function'
@@ -1405,90 +1404,6 @@ window.__ModuleLoader__.load({
 
     // ------------------------------------------------------------- settings --
 
-    const SESSION_API = '/intelligent-inspiration/session';
-
-    /**
-     * The per-conversation switch in the composer dock. Off means the host does
-     * not attach the answer-format section to this session's agent: the next
-     * answer is plain, with no Claim/Quiz/Recommendations structure and no
-     * inspiration chips. The chooser is stored by the host against the session.
-     */
-    function InspirationToggle(props) {
-      const sessionId = typeof props.sessionId === 'string' ? props.sessionId : '';
-      const [enabled, setEnabled] = useState(true);
-      const [busy, setBusy] = useState(false);
-
-      useEffect(() => {
-        if (!sessionId) return undefined;
-        let cancelled = false;
-        fetch(SESSION_API + '?sessionId=' + encodeURIComponent(sessionId), { credentials: 'same-origin' })
-          .then((response) => (response.ok ? response.json() : null))
-          .then((body) => {
-            if (!cancelled && body && typeof body.enabled === 'boolean') setEnabled(body.enabled);
-          })
-          .catch(() => {});
-        return () => {
-          cancelled = true;
-        };
-      }, [sessionId]);
-
-      if (!sessionId) return null;
-
-      const toggle = () => {
-        if (busy) return;
-        const next = !enabled;
-        setBusy(true);
-        fetch(SESSION_API, {
-          method: 'POST',
-          credentials: 'same-origin',
-          headers: { 'content-type': 'application/json' },
-          body: JSON.stringify({ sessionId, enabled: next }),
-        })
-          .then((response) => (response.ok ? response.json() : null))
-          .then((body) => {
-            setEnabled(body && typeof body.enabled === 'boolean' ? body.enabled : next);
-          })
-          .catch(() => {})
-          .then(() => setBusy(false));
-      };
-
-      return h('button', {
-        type: 'button',
-        'aria-pressed': enabled,
-        title: enabled
-          ? 'Inspiration is on for this conversation. Click to use plain answers.'
-          : 'Inspiration is off for this conversation. Click to turn the answer format back on.',
-        onClick: toggle,
-        style: {
-          display: 'inline-flex',
-          alignItems: 'center',
-          gap: 6,
-          height: 26,
-          padding: '0 10px',
-          borderRadius: 999,
-          border: '1px solid ' + T.border,
-          background: T.chip,
-          color: enabled ? T.text : T.dim,
-          font: 'inherit',
-          fontSize: 12,
-          whiteSpace: 'nowrap',
-          cursor: busy ? 'progress' : 'pointer',
-          opacity: busy ? 0.6 : 1,
-        },
-      },
-        h('span', {
-          'aria-hidden': true,
-          style: {
-            width: 6,
-            height: 6,
-            borderRadius: 999,
-            display: 'inline-block',
-            background: enabled ? T.link : T.dim,
-          },
-        }),
-        'Inspiration ' + (enabled ? 'on' : 'off'));
-    }
-
     function SettingsPanel() {
       const enabled = useSyncExternalStore(subscribeIcons, iconsEnabled);
       return h('div', { style: { display: 'flex', flexDirection: 'column', gap: 6 } },
@@ -1568,11 +1483,6 @@ window.__ModuleLoader__.load({
           order: 332,
           label: () => 'Intelligent Inspiration',
         }, SettingsPanel));
-        ctx.slots.inject('conversation.composer.dock', () => ctx.slots.register({
-          name: 'conversation.composer.dock',
-          id: '@local/intelligent-inspiration/session-toggle',
-          order: 20,
-        }, InspirationToggle));
       },
     };
   },
