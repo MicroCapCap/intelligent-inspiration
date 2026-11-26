@@ -18,7 +18,7 @@ const root = join(here, '..')
 const README = readFileSync(join(root, 'README.md'), 'utf8')
 
 function example(lang) {
-  const match = README.match(new RegExp('```' + lang + '\\n([\\s\\S]*?)```'))
+  const match = README.match(new RegExp('```' + lang + '\\r?\\n([\\s\\S]*?)```'))
   if (!match) throw new Error(`README has no ${lang} example`)
   return match[1]
 }

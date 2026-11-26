@@ -1,6 +1,6 @@
 {
   "name": "@local/intelligent-inspiration",
-  "version": "2.1.3",
+  "version": "2.2.1",
   "author": "intelligent-inspiration contributors",
   "description": "Turns cards, actions, inspiration, quiz, sort, softmax, match, and chart fences in a chat answer into interactive blocks instead of code: a resource list with linked titles, a checkable list of next steps, full-width suggested next prompts that fill the composer, a graded quiz with explanations, an order-the-steps exercise, a temperature slider driving live probability bars, a pair-the-columns exercise, and a small bar or line chart. The host half teaches the Claim → Quiz → What to do → Recommendations format, with the quiz checking whether the reader understood the claim.",
   "type": "module",

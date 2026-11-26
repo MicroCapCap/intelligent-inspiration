@@ -1,5 +1,12 @@
 # Changelog
 
+## 2.2.1
+
+- Reverted the per-conversation composer switch from 2.2.0. The answer-format
+  guidance is attached globally again, the composer chip and per-session state
+  file are gone, and the Settings → *Load external card icons* switch from 2.1.3
+  is unchanged.
+
 ## 2.1.3
 
 - Added a **Settings → Intelligent Inspiration** switch, *Load external card
